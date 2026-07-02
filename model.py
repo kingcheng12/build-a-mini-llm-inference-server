@@ -79,8 +79,21 @@ def greedy_select(logits):
     
     return np.argmax(logits, axis=-1)
 
-# Step 7 - build_vocab (not yet solved)
-# TODO: implement
+# Step 7 - build_vocab
+def build_vocab(corpus, special_tokens):
+    # TODO: build a character-level vocab; specials get the lowest ids, then sorted unique chars.
+    id_to_token = special_tokens
+    all_chars = set()
+    for text in corpus:
+        for c in text:
+            all_chars.add(c)
+
+    all_chars = sorted(list(all_chars))
+    id_to_token.extend(all_chars)
+
+    token_to_id = {token:i for i, token in enumerate(id_to_token)}
+
+    return {'token_to_id':token_to_id, 'id_to_token':id_to_token}
 
 # Step 8 - encode_prompt (not yet solved)
 # TODO: implement
