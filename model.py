@@ -116,9 +116,15 @@ def decode_tokens(token_ids, vocab, skip_special=True):
     # TODO: convert token ids back into a string using vocab['id_to_token'], optionally skipping specials.
     
     out = []
+    max_special_idx = 0
+    for token in vocab['token_to_id']:
+        if token[0] == '<' and token[-1] == '>':
+            max_special_idx += 1
+        else:
+            break
 
     for token_id in token_ids:
-        if token_id <=1 and skip_special: # is special
+        if token_id < max_special_idx and skip_special: # is special
             continue
         else:
             out.append(vocab['id_to_token'][token_id])
