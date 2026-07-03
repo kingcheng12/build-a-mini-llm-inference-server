@@ -337,8 +337,21 @@ def append_to_paged_cache(allocator, seq_id, k_new, v_new):
     # Update sequence length after appending
     allocator["seq_lengths"][seq_id] = pos
 
-# Step 22 - gather_kv_from_blocks (not yet solved)
-# TODO: implement
+# Step 22 - gather_kv_from_blocks
+def gather_kv_from_blocks(allocator, seq_id):
+    # TODO: reconstruct contiguous (length, d_model) K and V from the sequence's paged blocks.
+    
+    block_ids = allocator['seq_tables'][seq_id]
+    seq_lengths = allocator['seq_lengths'][seq_id]
+    block_size = allocator['block_size']
+
+    K = allocator['K_blocks'][block_ids]
+    V = allocator['V_blocks'][block_ids]
+
+    K = K.reshape(-1, K.shape[-1])[:seq_lengths]
+    V = V.reshape(-1, V.shape[-1])[:seq_lengths]
+
+    return K, V
 
 # Step 23 - paged_attention_step (not yet solved)
 # TODO: implement
