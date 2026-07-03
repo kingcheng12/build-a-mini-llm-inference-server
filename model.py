@@ -353,8 +353,13 @@ def gather_kv_from_blocks(allocator, seq_id):
 
     return K, V
 
-# Step 23 - paged_attention_step (not yet solved)
-# TODO: implement
+# Step 23 - paged_attention_step
+def paged_attention_step(q, allocator, seq_id):
+    # TODO: gather K, V for seq_id from the paged allocator and run causal attention with q
+    k, v = gather_kv_from_blocks(allocator, seq_id)
+    out = causal_attention(q, k, v)
+
+    return out
 
 # Step 24 - free_sequence_blocks (not yet solved)
 # TODO: implement
