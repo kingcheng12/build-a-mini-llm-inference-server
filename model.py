@@ -247,8 +247,13 @@ def model_decode_step(token_id, cache, params):
 
     return np.squeeze(logits), cache
 
-# Step 17 - blocks_needed (not yet solved)
-# TODO: implement
+# Step 17 - blocks_needed
+def blocks_needed(num_tokens, block_size):
+    # TODO: return the number of fixed-size blocks needed to store num_tokens tokens.
+    if num_tokens == 0:
+        return 0
+
+    return num_tokens // block_size + (0 if num_tokens % block_size == 0 else 1)
 
 # Step 18 - init_block_allocator (not yet solved)
 # TODO: implement
