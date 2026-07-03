@@ -272,8 +272,20 @@ def init_block_allocator(num_blocks, block_size, d_model):
 
     return block_allocator
 
-# Step 19 - allocate_block (not yet solved)
-# TODO: implement
+# Step 19 - allocate_block
+def allocate_block(allocator, seq_id):
+    # TODO: pop one free block id and append it to allocator['seq_tables'][seq_id]; raise RuntimeError if OOM.
+    if len(allocator["free_list"]) == 0:
+        raise RuntimeError("Out of memory: no free KV blocks remaining")
+    
+    block_id = allocator['free_list'].pop()
+
+    if seq_id not in allocator["seq_tables"]:
+        allocator["seq_tables"][seq_id] = []
+
+    allocator["seq_tables"][seq_id].append(block_id)
+    
+    return block_id
 
 # Step 20 - free_block (not yet solved)
 # TODO: implement
