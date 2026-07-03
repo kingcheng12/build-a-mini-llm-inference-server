@@ -372,8 +372,15 @@ def free_sequence_blocks(allocator, seq_id):
     allocator['seq_lengths'].pop(seq_id, None)
     allocator['seq_tables'].pop(seq_id, None)
 
-# Step 25 - kv_blocks_in_use (not yet solved)
-# TODO: implement
+# Step 25 - kv_blocks_in_use
+def kv_blocks_in_use(allocator):
+    # TODO: report allocator usage as {'used': int, 'free': int, 'total': int}.
+    
+    total = allocator['num_blocks']
+    used = sum([len(allocator['seq_tables'][seq_id]) for seq_id in allocator['seq_tables']])
+    free = total - used
+
+    return {'used': used, 'free': free, 'total':total}
 
 # Step 26 - make_request (not yet solved)
 # TODO: implement
