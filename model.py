@@ -287,8 +287,11 @@ def allocate_block(allocator, seq_id):
     
     return block_id
 
-# Step 20 - free_block (not yet solved)
-# TODO: implement
+# Step 20 - free_block
+def free_block(allocator, block_id):
+    # TODO: return block_id to allocator['free_list']
+    
+    allocator['free_list'].append(block_id)
 
 # Step 21 - append_to_paged_cache (not yet solved)
 # TODO: implement
