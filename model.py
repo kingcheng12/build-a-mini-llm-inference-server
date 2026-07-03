@@ -255,8 +255,22 @@ def blocks_needed(num_tokens, block_size):
 
     return (num_tokens + block_size - 1) // block_size
 
-# Step 18 - init_block_allocator (not yet solved)
-# TODO: implement
+# Step 18 - init_block_allocator
+def init_block_allocator(num_blocks, block_size, d_model):
+    # TODO: build the paged KV allocator dict with K_blocks, V_blocks, free_list, seq_tables, and config.
+    
+    block_allocator = {}
+    block_allocator['num_blocks'] = num_blocks
+    block_allocator['block_size'] = block_size
+    block_allocator['d_model'] = d_model
+
+    block_allocator['K_blocks'] = np.zeros((num_blocks, block_size, d_model), dtype = np.float32)
+    block_allocator['V_blocks'] = np.zeros((num_blocks, block_size, d_model), dtype = np.float32)
+
+    block_allocator['free_list'] = list(range(num_blocks))
+    block_allocator['seq_tables'] = {}
+
+    return block_allocator
 
 # Step 19 - allocate_block (not yet solved)
 # TODO: implement
