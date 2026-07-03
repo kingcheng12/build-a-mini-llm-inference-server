@@ -204,8 +204,27 @@ def causal_attention(q, k, v, is_causal=True):
     out = attn_probs @ v
     return out
 
-# Step 15 - model_prefill (not yet solved)
-# TODO: implement
+# Step 15 - model_prefill
+def model_prefill(token_ids, params):
+    # TODO: embed tokens, project Q/K/V, fill the KV cache, run causal attention, return last-position logits.
+    token_ids = np.array(token_ids)
+    emb = embed_tokens(token_ids, params["embedding"])
+
+    Q = linear_projection(emb, params['Wq'], params.get("bq"))
+    K = linear_projection(emb, params['Wk'], params.get("bk"))
+    V = linear_projection(emb, params['Wv'], params.get("bv"))
+    
+    seq_len = len(token_ids)
+    cache = init_kv_cache(params["max_seq_len"], K.shape[-1])
+    append_kv(cache, K, V)
+
+    atten_out = causal_attention(Q, K, V, is_causal=True)
+    hidden = linear_projection(atten_out, params['Wo'], params.get('bo'))
+
+    last_hidden = hidden[-1]
+    logits = linear_projection(last_hidden, params["W_out"], params.get("b_out"))
+
+    return logits, cache
 
 # Step 16 - model_decode_step (not yet solved)
 # TODO: implement
