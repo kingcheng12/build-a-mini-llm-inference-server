@@ -138,8 +138,23 @@ def embed_tokens(token_ids, embedding_matrix):
     # TODO: return the (T, D) embedding rows for each token id in token_ids
     return np.array([embedding_matrix[token_id] for token_id in token_ids])
 
-# Step 11 - linear_projection (not yet solved)
-# TODO: implement
+# Step 11 - linear_projection
+import numpy as np
+
+def linear_projection(x, weight, bias=None):
+    # TODO: Apply y = x @ weight + bias, with bias optional and broadcasting over leading axes.
+    x = np.array(x)
+    weight = np.array(weight)
+    outdim = weight.shape[-1]
+
+    y = x @ weight
+    if bias is not None:
+        bias = np.array(bias)
+        # change shape of bias to enable broadcast
+        bias = bias.reshape(outdim,)
+        y += bias
+
+    return y
 
 # Step 12 - init_kv_cache (not yet solved)
 # TODO: implement
