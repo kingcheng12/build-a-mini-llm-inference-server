@@ -269,6 +269,7 @@ def init_block_allocator(num_blocks, block_size, d_model):
 
     block_allocator['free_list'] = list(range(num_blocks))
     block_allocator['seq_tables'] = {}
+    block_allocator['seq_lengths'] = {}
 
     return block_allocator
 
@@ -293,8 +294,34 @@ def free_block(allocator, block_id):
     
     allocator['free_list'].append(block_id)
 
-# Step 21 - append_to_paged_cache (not yet solved)
-# TODO: implement
+# Step 21 - append_to_paged_cache
+def append_to_paged_cache(allocator, seq_id, k_new, v_new):
+    """Write t new K/V rows into the sequence's paged blocks, allocating as needed."""
+    # TODO: append k_new/v_new (t, d_model) rows into seq_id's paged blocks, growing the block table when needed.
+    
+    assert k_new.shape == v_new.shape, "k_new and v_new must have the same shape"
+
+    t, d_model = k_new.shape
+    block_size = allocator["block_size"]
+    blocks_need = blocks_needed(t, block_size)
+
+    pos = 0
+    written = 0
+
+    while written < t:
+        block_index = pos // block_size
+        offset = pos % block_size
+
+        block_id = allocate_block(allocator, seq_id)
+
+        space = block_size - offset
+        n = min(space, t - written)
+
+        allocator["K_blocks"][block_id, offset:offset + n, :] = k_new[written:written + n, :]
+        allocator["V_blocks"][block_id, offset:offset + n, :] = v_new[written:written + n, :]
+
+        written += n
+        pos += n
 
 # Step 22 - gather_kv_from_blocks (not yet solved)
 # TODO: implement
