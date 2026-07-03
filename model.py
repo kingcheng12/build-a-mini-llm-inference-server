@@ -303,16 +303,27 @@ def append_to_paged_cache(allocator, seq_id, k_new, v_new):
 
     t, d_model = k_new.shape
     block_size = allocator["block_size"]
-    blocks_need = blocks_needed(t, block_size)
 
-    pos = 0
+    # Initialize per-sequence metadata if this is a new sequence
+    if seq_id not in allocator["seq_tables"]:
+        allocator["seq_tables"][seq_id] = []
+
+    if seq_id not in allocator["seq_lengths"]:
+        allocator["seq_lengths"][seq_id] = 0
+
+    # Start appending from the current sequence length
+    pos = allocator["seq_lengths"][seq_id]
     written = 0
 
     while written < t:
         block_index = pos // block_size
         offset = pos % block_size
 
-        block_id = allocate_block(allocator, seq_id)
+        # Allocate a new physical block if needed
+        if block_index == len(allocator["seq_tables"][seq_id]):
+            block_id = allocate_block(allocator, seq_id)
+        else:
+            block_id = allocator["seq_tables"][seq_id][block_index]
 
         space = block_size - offset
         n = min(space, t - written)
@@ -322,6 +333,9 @@ def append_to_paged_cache(allocator, seq_id, k_new, v_new):
 
         written += n
         pos += n
+
+    # Update sequence length after appending
+    allocator["seq_lengths"][seq_id] = pos
 
 # Step 22 - gather_kv_from_blocks (not yet solved)
 # TODO: implement
