@@ -283,7 +283,7 @@ def allocate_block(allocator, seq_id):
     if seq_id not in allocator["seq_tables"]:
         allocator["seq_tables"][seq_id] = []
 
-    allocator["seq_tables"][seq_id].append(block_id)
+    allocator["seq_tables"][seq_id].append(block_id) # mark for a seq which block belongs to it
     
     return block_id
 
