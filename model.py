@@ -169,8 +169,19 @@ def init_kv_cache(max_seq_len, d_model):
 
     return cache
 
-# Step 13 - append_kv (not yet solved)
-# TODO: implement
+# Step 13 - append_kv
+import numpy as np
+
+def append_kv(cache, k_new, v_new):
+    # TODO: write k_new and v_new into the cache starting at cache['length'] and bump length.
+    
+    current_length = cache['length']
+    len_new = k_new.shape[0]
+    cache['K'][current_length:current_length+len_new] = k_new
+    cache['V'][current_length:current_length+len_new] = v_new
+    cache['length'] += len_new
+
+    return cache
 
 # Step 14 - causal_attention (not yet solved)
 # TODO: implement
