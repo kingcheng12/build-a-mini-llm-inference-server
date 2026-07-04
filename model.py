@@ -382,8 +382,16 @@ def kv_blocks_in_use(allocator):
 
     return {'used': used, 'free': free, 'total':total}
 
-# Step 26 - make_request (not yet solved)
-# TODO: implement
+# Step 26 - make_request
+def make_request(request_id, prompt_token_ids, max_new_tokens, sampling_params):
+    # TODO: package the request id, prompt tokens, generation budget, and sampling params into a dict.
+    request = {}
+    request['request_id'] = request_id
+    request['prompt_token_ids'] = prompt_token_ids.copy()
+    request['max_new_tokens'] = max_new_tokens
+    request['sampling_params'] = sampling_params
+
+    return request
 
 # Step 27 - init_sequence_state (not yet solved)
 # TODO: implement
