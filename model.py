@@ -531,8 +531,55 @@ def batched_decode_step(params, sequences, sampling_config):
   
     return sequences
 
-# Step 33 - static_batch_generate (not yet solved)
-# TODO: implement
+# Step 33 - static_batch_generate
+def static_batch_generate(params, requests, sampling_config, max_new_tokens):
+    """Run prefill for all requests, then iterate batched decode steps until each
+    sequence hits its per-request budget or the global max_new_tokens cap."""
+    # TODO: prefill each request, then loop sampling next tokens until done.
+    greedy = sampling_config.get('greedy', None)
+    out = []
+    states = [init_sequence_state(request, params) for request in requests]
+    greedy = sampling_config['greedy']
+
+    # decode
+    for _ in range(max_new_tokens):
+        all_done = True
+
+        for state in states:
+            cap = min(state['max_new_tokens'], max_new_tokens)
+            if state['done'] or len(state['generated']) >= cap:
+                state['done'] = True
+                continue
+            all_done = False
+
+            logits = state['last_logits']
+
+            if greedy is None or greedy:
+                next_id = greedy_select(logits)
+            else:
+                if 'top_k' in sampling_config:
+                    logits = top_k_filter(logits, sampling_config['top_k'])
+                if 'top_p' in sampling_config:
+                    logits = top_p_filter(logits, sampling_config['top_p'])
+                if 'temperature' in sampling_config:
+                    logits = apply_temperature(logits, sampling_config['temperature'])
+                probs = stable_softmax(logits)
+
+                next_id = sample_from_probs(probs, sampling_config['rng'])
+
+            next_id = int(next_id)
+
+            new_logits, cache = model_decode_step(next_id, state['cache'], params)
+            state['cache'] = cache
+            state['last_logits'] = new_logits
+            state['generated'].append(next_id)
+            if len(state['generated']) >= cap:
+                state['done'] = True
+
+        if all_done:
+            break
+        
+    return [{'request_id': state['request_id'], 'output_ids': state['generated']} for state in states]
 
 # Step 34 - has_free_capacity (not yet solved)
 # TODO: implement
