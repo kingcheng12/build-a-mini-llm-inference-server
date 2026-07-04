@@ -407,11 +407,14 @@ def init_sequence_state(request, params):
     seq_state['request_id'] = request['request_id']
     seq_state['prompt_token_ids'] = token_ids.copy()
     seq_state['generated'] = []
-    seq_state['last_logits'] = logits
-    seq_state['done'] = False
+
     seq_state['max_new_tokens'] = request['max_new_tokens']
     seq_state['sampling_params'] = request['sampling_params']
+
+    seq_state['last_logits'] = logits
     seq_state['cache'] = cache
+
+    seq_state['done'] = False
 
     return seq_state
 
