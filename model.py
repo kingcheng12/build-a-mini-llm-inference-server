@@ -456,8 +456,18 @@ def sequence_decode_step(state, params, rng):
 
     return next_id, state
 
-# Step 29 - is_sequence_done (not yet solved)
-# TODO: implement
+# Step 29 - is_sequence_done
+def is_sequence_done(state, eos_token_id):
+    # TODO: return True if state has hit max_new_tokens budget or last generated token is EOS
+    # edge case
+    if len(state['generated']) == 0:
+        return False
+    if state['max_new_tokens'] == 0 or len(state['generated']) == state['max_new_tokens']:
+        return True
+
+    last_token_id = state['generated'][-1]
+
+    return last_token_id == eos_token_id
 
 # Step 30 - generate_single_sequence (not yet solved)
 # TODO: implement
