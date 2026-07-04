@@ -500,8 +500,39 @@ def build_batch_step_input(sequences):
     return {'active_indices': active_indices, 
             'input_ids': np.array(input_ids, dtype=np.int64)}
 
-# Step 32 - batched_decode_step (not yet solved)
-# TODO: implement
+# Step 32 - batched_decode_step
+def batched_decode_step(params, sequences, sampling_config):
+    """Run one synchronized decode step across active sequences."""
+    # TODO: For each active sequence, run a decode step and append the sampled token.
+    
+    # build batch input
+    batch_input = build_batch_step_input(sequences)
+    active_indices = batch_input['active_indices']
+    input_ids = batch_input['input_ids']
+    greedy = sampling_config['greedy']
+
+    # decode
+    for i in range(len(active_indices)):
+        active_ind = active_indices[i]
+        input_id = input_ids[i]
+        state = sequences[active_ind]
+        state['sampling_params'] = sampling_config
+
+        logits, cache = model_decode_step(input_id, state['kv_cache'], params)
+
+        state['last_logits'] = logits
+        state['kv_cache'] = cache
+
+        if greedy:
+            rng = None
+        else:
+            rng = sampling_config['rng']
+        
+        next_id, state = sequence_decode_step(state, params, rng)
+
+        sequences[active_ind] = state
+  
+    return sequences
 
 # Step 33 - static_batch_generate (not yet solved)
 # TODO: implement
