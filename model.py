@@ -418,8 +418,43 @@ def init_sequence_state(request, params):
 
     return seq_state
 
-# Step 28 - sequence_decode_step (not yet solved)
-# TODO: implement
+# Step 28 - sequence_decode_step
+def sequence_decode_step(state, params, rng):
+    # TODO: sample next token from state['last_logits'], advance cache via model_decode_step, append token.
+    # sampling and advance
+
+    # sampling
+    logits = state['last_logits']
+    sp = state['sampling_params']
+    greedy = sp.get('greedy', None)
+    temperature = sp.get('temperature', None)
+    top_k = sp.get('top_k', None)
+    top_p  = sp.get('top_p ', None)
+
+    if (greedy is not None and greedy) or (temperature is not None and temperature <= 0):
+        next_id = greedy_select(logits)
+    else:
+        if top_k is not None:
+            logits = top_k_filter(logits, top_k)
+        if top_p is not None:
+            logits = top_p_filter(logits, top_p)
+        if temperature is not None:
+            logits = apply_temperature(logits, temperature)
+        probs = stable_softmax(logits)
+
+        next_id = sample_from_probs(probs, rng)
+    
+    next_id = int(next_id)
+
+    # advance
+    # add to cache
+
+    new_logits, cache = model_decode_step(next_id, state['cache'], params)
+    state['cache'] = cache
+    state['last_logits'] = new_logits
+    state['generated'].append(next_id)
+
+    return next_id, state
 
 # Step 29 - is_sequence_done (not yet solved)
 # TODO: implement
