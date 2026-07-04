@@ -506,31 +506,28 @@ def batched_decode_step(params, sequences, sampling_config):
     # TODO: For each active sequence, run a decode step and append the sampled token.
     
     # build batch input
-    batch_input = build_batch_step_input(sequences)
-    active_indices = batch_input['active_indices']
-    input_ids = batch_input['input_ids']
+    batch  = build_batch_step_input(sequences)
     greedy = sampling_config['greedy']
 
     # decode
-    for i in range(len(active_indices)):
-        active_ind = active_indices[i]
-        input_id = input_ids[i]
-        state = sequences[active_ind]
-        state['sampling_params'] = sampling_config
+    for idx, tok in zip(batch['active_indices'], batch['input_ids']):
+        state = sequences[idx]
+        logits, cache = model_decode_step(int(tok), state['kv_cache'], params)
 
-        logits, cache = model_decode_step(input_id, state['kv_cache'], params)
-
-        state['last_logits'] = logits
-        state['kv_cache'] = cache
-
-        if greedy:
-            rng = None
+        if greedy is None or greedy:
+            next_id = greedy_select(logits)
         else:
-            rng = sampling_config['rng']
-        
-        next_id, state = sequence_decode_step(state, params, rng)
+            if 'top_k' in sampling_config:
+                logits = top_k_filter(logits, sampling_config['top_k'])
+            if 'top_p' in sampling_config:
+                logits = top_p_filter(logits, sampling_config['top_p'])
+            if 'temperature' in sampling_config:
+                logits = apply_temperature(logits, sampling_config['temperature'])
+            probs = stable_softmax(logits)
 
-        sequences[active_ind] = state
+            next_id = sample_from_probs(probs, sampling_config['rng'])
+
+        state['token_ids'].append(int(next_id))
   
     return sequences
 
