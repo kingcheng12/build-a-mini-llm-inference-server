@@ -393,8 +393,27 @@ def make_request(request_id, prompt_token_ids, max_new_tokens, sampling_params):
 
     return request
 
-# Step 27 - init_sequence_state (not yet solved)
-# TODO: implement
+# Step 27 - init_sequence_state
+def init_sequence_state(request, params):
+    # TODO: Initialize per-sequence state by running prefill and storing cache/logits.
+    
+    token_ids = request['prompt_token_ids']
+    if isinstance(token_ids, int):
+        token_ids = [token_ids]
+
+    logits, cache = model_prefill(token_ids, params)
+
+    seq_state = {}
+    seq_state['request_id'] = request['request_id']
+    seq_state['prompt_token_ids'] = token_ids.copy()
+    seq_state['generated'] = []
+    seq_state['last_logits'] = logits
+    seq_state['done'] = False
+    seq_state['max_new_tokens'] = request['max_new_tokens']
+    seq_state['sampling_params'] = request['sampling_params']
+    seq_state['cache'] = cache
+
+    return seq_state
 
 # Step 28 - sequence_decode_step (not yet solved)
 # TODO: implement
