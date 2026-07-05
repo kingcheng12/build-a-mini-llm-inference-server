@@ -681,14 +681,20 @@ def run_continuous_batching(params, requests, allocator, sampling_config, max_st
         # add request from waiting to running (NEED TO GET BETTER LOGIC)
         while len(waiting) > 0:
             request = waiting[0]
-            max_seq_len = len(request['prompt_token_ids']) + request['max_new_tokens']
-            required_blocks = math.ceil(max_seq_len/block_size)
+
+            prompt_len = len(request['prompt_token_ids'])
+            max_seq_len = prompt_len + request['max_new_tokens']
+            required_blocks = math.ceil(max_seq_len / block_size)
+
             if has_free_capacity(allocator, required_blocks):
-                request = waiting.pop(0)
-                params['max_seq_len'] = max_seq_len
-                request['sampling_params'] = sampling_config
-                state = init_sequence_state(request, params)
+
+                state = {
+                            'request_id': request['request_id'],
+                            'token_ids': request['prompt_token_ids'],
+                            'done': False
+                        }
                 running.append(state)
+                waiting.pop(0)
             else:
                 break
 
