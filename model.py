@@ -776,8 +776,28 @@ def select_admissions(waiting_heap, allocator, block_size, max_admit):
     
     return admitted
 
-# Step 40 - preempt_sequence (not yet solved)
-# TODO: implement
+# Step 40 - preempt_sequence
+def preempt_sequence(sequence, allocator, waiting_heap):
+    # TODO: free the sequence's KV blocks and re-queue its request on the waiting heap.
+    
+    seq_id = sequence['request_id']
+    priority = sequence['priority']
+
+    # free cache
+    free_sequence_blocks(allocator, seq_id)
+
+    # re-enqueue waiting_heap
+    # recreate request record to remove current runtime info
+    request = {
+        'request_id': seq_id,
+        'max_new_tokens': sequence['max_new_tokens'],
+        'prompt_token_ids': sequence['prompt_token_ids'],
+        'priority': priority,
+    }
+
+    priority_queue_push(waiting_heap, priority, request)
+    
+    return request
 
 # Step 41 - schedule_step (not yet solved)
 # TODO: implement
