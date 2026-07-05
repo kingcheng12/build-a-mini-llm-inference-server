@@ -581,8 +581,11 @@ def static_batch_generate(params, requests, sampling_config, max_new_tokens):
         
     return [{'request_id': state['request_id'], 'output_ids': state['generated']} for state in states]
 
-# Step 34 - has_free_capacity (not yet solved)
-# TODO: implement
+# Step 34 - has_free_capacity
+def has_free_capacity(allocator, required_blocks):
+    # TODO: return True iff allocator has at least required_blocks free blocks.
+    
+    return required_blocks <= len(allocator['free_list'])
 
 # Step 35 - continuous_batch_step (not yet solved)
 # TODO: implement
