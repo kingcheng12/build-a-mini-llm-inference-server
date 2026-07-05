@@ -369,7 +369,7 @@ def free_sequence_blocks(allocator, seq_id):
     for block_id in block_ids:
         free_block(allocator, block_id)
     
-    allocator['seq_lengths'].pop(seq_id, None)
+    # allocator['seq_lengths'].pop(seq_id, None)
     allocator['seq_tables'].pop(seq_id, None)
 
 # Step 25 - kv_blocks_in_use
@@ -799,8 +799,23 @@ def preempt_sequence(sequence, allocator, waiting_heap):
     
     return request
 
-# Step 41 - schedule_step (not yet solved)
-# TODO: implement
+# Step 41 - schedule_step
+def schedule_step(waiting_heap, running, allocator, block_size, max_running):
+    # TODO: preempt over-capacity sequences, then admit from the waiting heap up to max_running.
+
+    while len(running) > max_running:
+        sequence = running.pop()
+        request = preempt_sequence(sequence, allocator, waiting_heap)
+
+    admitted = select_admissions(waiting_heap, allocator, block_size, max_running - len(running))
+
+    # schedule admission but not yet modify running
+    out = {
+        'running': running,
+        'newly_admitted': admitted,
+    }
+
+    return out
 
 # Step 42 - format_stream_chunk (not yet solved)
 # TODO: implement
