@@ -587,8 +587,82 @@ def has_free_capacity(allocator, required_blocks):
     
     return required_blocks <= len(allocator['free_list'])
 
-# Step 35 - continuous_batch_step (not yet solved)
-# TODO: implement
+# Step 35 - continuous_batch_step
+def continuous_batch_step(params, running, allocator, sampling_config):
+    """Advance every active sequence in `running` by one decoded token using the paged allocator."""
+    # TODO: for each non-done sequence, project Q/K/V from its last token, append to the paged cache, run paged attention, sample, and append.
+
+    emb = params['embedding']
+    Wq = params['Wq']
+    Wk = params['Wk']
+    Wv = params['Wv']
+    W_out = params['W_out']
+    d_model = emb.shape[-1]
+    greedy = sampling_config.get('greedy', False)
+    eos_token_id = sampling_config.get('eos_token_id', None)
+
+    for state in running:
+        if state['done']:
+            continue
+
+        seq_id = state['request_id']
+        token_id = state['token_ids'][-1]
+
+        # x is 1D: (d_model,)
+        x = emb[token_id]
+
+        q = x @ Wq
+        k = x @ Wk
+        v = x @ Wv
+
+
+        q = np.asarray(q).reshape(1, -1)
+
+        # k/v must be 2D because append_to_paged_cache expects (t, d_model)
+        k = np.asarray(k).reshape(1, -1)
+        v = np.asarray(v).reshape(1, -1)
+
+        append_to_paged_cache(allocator, seq_id, k, v)
+
+        attn_out = paged_attention_step(q, allocator, seq_id)
+
+        logits = linear_projection(attn_out, W_out)
+
+        if hasattr(logits, "ndim") and logits.ndim == 2:
+            logits = logits[-1]
+
+        if greedy:
+            next_id = greedy_select(logits)
+        else:
+            temperature = sampling_config.get('temperature', 1.0)
+            top_k = sampling_config.get('top_k', None)
+            top_p = sampling_config.get('top_p', None)
+
+            if temperature is not None:
+                logits = apply_temperature(logits, temperature)
+
+            if top_k is not None:
+                logits = top_k_filter(logits, top_k)
+
+            if top_p is not None:
+                logits = top_p_filter(logits, top_p)
+
+            probs = stable_softmax(logits)
+            next_id = sample_from_probs(probs, sampling_config['rng'])
+
+        next_id = int(next_id)
+
+        state['token_ids'].append(next_id)
+        state['generated'].append(next_id)
+        state['length'] += 1
+
+        if len(state['generated']) >= state['max_new_tokens']:
+            state['done'] = True
+
+        if eos_token_id is not None and next_id == eos_token_id:
+            state['done'] = True
+
+    return running
 
 # Step 36 - run_continuous_batching (not yet solved)
 # TODO: implement
