@@ -664,8 +664,54 @@ def continuous_batch_step(params, running, allocator, sampling_config):
 
     return running
 
-# Step 36 - run_continuous_batching (not yet solved)
-# TODO: implement
+# Step 36 - run_continuous_batching
+import math
+def run_continuous_batching(params, requests, allocator, sampling_config, max_steps):
+    # TODO: Drive the continuous-batching loop: admit, decode, retire finished sequences.
+    
+    waiting = requests
+    running = []
+    completed = []
+    block_size = allocator['block_size']
+    eos_token_id = sampling_config['eos_token_id']
+
+    step = 0
+    while len(waiting)+len(running) > 0 and step < max_steps:
+        
+        # add request from waiting to running (NEED TO GET BETTER LOGIC)
+        while len(waiting) > 0:
+            request = waiting[0]
+            max_seq_len = len(request['prompt_token_ids']) + request['max_new_tokens']
+            required_blocks = math.ceil(max_seq_len/block_size)
+            if has_free_capacity(allocator, required_blocks):
+                request = waiting.pop(0)
+                params['max_seq_len'] = max_seq_len
+                request['sampling_params'] = sampling_config
+                state = init_sequence_state(request, params)
+                running.append(state)
+            else:
+                break
+
+        # process current running
+        if len(running) == 0:
+            break
+        running = continuous_batch_step(params, running, allocator, sampling_config)
+
+        # update state and release cache
+        done_mask = [is_sequence_done(state, eos_token_id) for state in running]
+        if sum(done_mask) > 0:
+            finished = [state for state, done in zip(running, done_mask) if done]
+            running = [state for state, done in zip(running, done_mask) if not done]
+
+            for state in finished:
+                seq_id = state['request_id']
+                free_sequence_blocks(allocator, seq_id)
+
+                completed.append({'request_id': seq_id, 'output_ids': state['generated']})
+        
+        step += 1
+    
+    return completed
 
 # Step 37 - priority_queue_push (not yet solved)
 # TODO: implement
