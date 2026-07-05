@@ -706,7 +706,7 @@ def run_continuous_batching(params, requests, allocator, sampling_config, max_st
             break
         running = continuous_batch_step(params, running, allocator, sampling_config)
 
-        # update state and release cache
+        # retire states
         done_mask = [is_sequence_done(state, eos_token_id) for state in running]
         if sum(done_mask) > 0:
             finished = [state for state, done in zip(running, done_mask) if done]
