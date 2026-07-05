@@ -752,8 +752,29 @@ def priority_queue_pop(heap):
     else:
         return heapq.heappop(heap)[2]
 
-# Step 39 - select_admissions (not yet solved)
-# TODO: implement
+# Step 39 - select_admissions
+def select_admissions(waiting_heap, allocator, block_size, max_admit):
+    # TODO: Pop requests from the waiting priority queue and admit as many as the allocator can host.
+    count = 0
+    admitted = []
+    required_blocks = 0
+
+    while len(waiting_heap) > 0 and count < max_admit:
+        # check the top heap request capacity
+        request = waiting_heap[0][2]
+
+        prompt_len = len(request['prompt_token_ids'])
+        required_blocks += math.ceil(prompt_len / block_size)
+
+        if has_free_capacity(allocator, required_blocks):
+            request = priority_queue_pop(waiting_heap)
+
+            admitted.append(request)
+            count += 1
+        else:
+            break
+    
+    return admitted
 
 # Step 40 - preempt_sequence (not yet solved)
 # TODO: implement
