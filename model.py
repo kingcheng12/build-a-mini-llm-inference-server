@@ -691,6 +691,9 @@ def run_continuous_batching(params, requests, allocator, sampling_config, max_st
                 state = {
                             'request_id': request['request_id'],
                             'token_ids': request['prompt_token_ids'],
+                            'generated': [],
+                            'length': len(request['prompt_token_ids']),
+                            'max_new_tokens': request['max_new_tokens'],
                             'done': False
                         }
                 running.append(state)
@@ -716,6 +719,17 @@ def run_continuous_batching(params, requests, allocator, sampling_config, max_st
                 completed.append({'request_id': seq_id, 'output_ids': state['generated']})
         
         step += 1
+
+    # If max_steps stopped the loop, return partial outputs too.
+    for state in running:
+        seq_id = state['request_id']
+
+        free_sequence_blocks(allocator, seq_id)
+
+        completed.append({
+            'request_id': seq_id,
+            'output_ids': state['generated']
+        })
     
     return completed
 
