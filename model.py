@@ -115,20 +115,23 @@ def encode_prompt(text, vocab, add_bos=True):
 def decode_tokens(token_ids, vocab, skip_special=True):
     # TODO: convert token ids back into a string using vocab['id_to_token'], optionally skipping specials.
     
+    id_to_token = vocab["id_to_token"]
+
     out = []
-    max_special_idx = 0
-    for token in vocab['token_to_id']:
-        if token[0] == '<' and token[-1] == '>':
-            max_special_idx += 1
-        else:
-            break
 
     for token_id in token_ids:
-        if token_id < max_special_idx and skip_special: # is special
+        # bounds safety
+        if token_id < 0 or token_id >= len(id_to_token):
             continue
-        else:
-            out.append(vocab['id_to_token'][token_id])
-    
+
+        token = id_to_token[token_id]
+
+        # skip special tokens like <eos>, <pad>, etc.
+        if skip_special and len(token) > 2 and token[0] == '<' and token[-1] == '>':
+            continue
+
+        out.append(token)
+
     return ''.join(out)
 
 # Step 10 - embed_tokens
@@ -957,8 +960,24 @@ def collect_request_output(server_state, request_id):
         "chunks": req["chunks"]
     }
 
-# Step 46 - build_completion_response (not yet solved)
-# TODO: implement
+# Step 46 - build_completion_response
+def build_completion_response(server_state, request_id, vocab):
+    # TODO: build the final OpenAI-style completion dict from the completed record.
+    
+    out = collect_request_output(server_state, request_id)
+    if out is None:
+        return None
+    
+    output_ids = out['output_ids']
+    text = decode_tokens(output_ids, vocab, skip_special=True)
+    finish_reason = server_state['completed'][request_id].get('finish_reason', 'stop')
+
+    return {
+        'request_id': request_id,
+        'text': text,
+        'output_ids': output_ids,
+        'finish_reason': finish_reason
+    }
 
 # Step 47 - time_to_first_token (not yet solved)
 # TODO: implement
