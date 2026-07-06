@@ -1108,7 +1108,15 @@ def run_throughput_latency_benchmark(params, allocator, vocab, prompts, sampling
     step = 0
     seen_req = set()
     while step < max_steps:
-        streams = drive_until_complete(server_state, params, allocator, sampling_config, vocab, max_steps=1)
+        streams = drive_until_complete(
+            server_state,
+            params,
+            allocator,
+            sampling_config,
+            vocab,
+            max_steps = 1
+        )
+        server_state['streams'].extend(streams)
         for chunk in streams:
             request_id = chunk['request_id']
             if request_id not in seen_req:
