@@ -975,7 +975,7 @@ def build_completion_response(server_state, request_id, vocab):
     return {
         'request_id': request_id,
         'text': text,
-        'output_ids': output_ids,
+        'output_ids': output_ids.copy(),
         'finish_reason': finish_reason
     }
 
