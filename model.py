@@ -968,14 +968,14 @@ def build_completion_response(server_state, request_id, vocab):
     if out is None:
         return None
     
-    output_ids = out['output_ids']
+    output_ids = out['output_ids'].copy()
     text = decode_tokens(output_ids, vocab, skip_special=True)
     finish_reason = server_state['completed'][request_id].get('finish_reason', 'stop')
 
     return {
         'request_id': request_id,
         'text': text,
-        'output_ids': output_ids.copy(),
+        'output_ids': output_ids,
         'finish_reason': finish_reason
     }
 
