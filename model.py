@@ -1116,7 +1116,6 @@ def run_throughput_latency_benchmark(params, allocator, vocab, prompts, sampling
             vocab,
             max_steps = 1
         )
-        server_state['streams'].extend(streams)
         for chunk in streams:
             request_id = chunk['request_id']
             if request_id not in seen_req:
