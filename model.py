@@ -942,7 +942,7 @@ def collect_request_output(server_state, request_id):
     # TODO: look up the completed record for request_id and return its output_ids and chunks
     
     # check completeness
-    completed = server_state['completed']
+    completed = server_state.get('completed', {})
 
     if request_id not in completed:
         return None
@@ -951,7 +951,11 @@ def collect_request_output(server_state, request_id):
     output_ids = req['output_ids']
     chunks = req['chunks']
 
-    return output_ids, chunks
+    return {
+        "request_id": request_id,
+        "output_ids": req["output_ids"],
+        "chunks": req["chunks"]
+    }
 
 # Step 46 - build_completion_response (not yet solved)
 # TODO: implement
