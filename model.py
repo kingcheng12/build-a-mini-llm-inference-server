@@ -854,14 +854,14 @@ def drive_until_complete(server_state, params, allocator, sampling_config, vocab
     
     step = 0
 
-    if "streams" not in server_state:
-        server_state["streams"] = []
-    if "completed" not in server_state:
-        server_state["completed"] = {}
+    server_state.setdefault("streams", [])
+    server_state.setdefault("completed", {})
+    server_state.setdefault("running", [])
+    server_state.setdefault("waiting_heap", [])
 
-    while step < max_steps and (
-        server_state["waiting_heap"] or server_state["running"]
-    ):
+    eos_token_id = sampling_config.get('eos_token_id', [0, 1, 2])
+
+    while step < max_steps and (server_state["waiting_heap"] or server_state["running"]):
 
         plan = schedule_step(
             server_state["waiting_heap"],
@@ -881,52 +881,48 @@ def drive_until_complete(server_state, params, allocator, sampling_config, vocab
             )
             running.append(state)
 
-        # snapshot lengths
+        # track emitted length per request
         pre_len = {
             s["request_id"]: len(s["generated"])
             for s in running
         }
 
-        for state in running:
-            if state["request_id"] not in server_state["completed"]:
-                server_state["completed"][state["request_id"]] = {
-                    "output_ids": [],
-                    "chunks": []
-                }
+        # init completed entry
+        for s in running:
+            rid = s["request_id"]
+            server_state["completed"].setdefault(rid, {
+                "output_ids": [],
+                "chunks": []
+            })
 
         # DECODE
-        running = continuous_batch_step(
-            params, running, allocator, sampling_config
-        )
+        running = continuous_batch_step(params, running, allocator, sampling_config)
 
         finished_ids = set()
 
         for state in running:
             rid = state["request_id"]
-            old = pre_len[rid]
+            old = pre_len.get(rid, 0)
+
+            done = is_sequence_done(state, eos_token_id)
 
             for tok in state["generated"][old:]:
                 text = decode_tokens([tok], vocab)
-
-                is_done = is_sequence_done(state, sampling_config["eos_token_id"])
-
-                chunk = {
-                    "token_id": tok,
-                    "finished": is_done
-                }
 
                 server_state["streams"].append({
                     "request_id": rid,
                     "token_id": tok,
                     "text": text,
-                    "finished": is_done
+                    "finished": done
                 })
 
-                # store per-request output
                 server_state["completed"][rid]["output_ids"].append(tok)
-                server_state["completed"][rid]["chunks"].append(chunk)
+                server_state["completed"][rid]["chunks"].append({
+                    "token_id": tok,
+                    "finished": done
+                })
 
-            if is_sequence_done(state, sampling_config["eos_token_id"]):
+            if done:
                 free_sequence_blocks(allocator, rid)
                 finished_ids.add(rid)
 
@@ -934,11 +930,9 @@ def drive_until_complete(server_state, params, allocator, sampling_config, vocab
             s for s in running if s["request_id"] not in finished_ids
         ]
 
-        server_state["completed"].extend(finished_ids)
-
         step += 1
 
-    return server_state['streams']
+    return server_state["streams"]
 
 # Step 45 - collect_request_output
 def collect_request_output(server_state, request_id):
