@@ -828,8 +828,22 @@ def format_stream_chunk(request_id, token_id, token_text, finished):
 
     return chunk
 
-# Step 43 - submit_request (not yet solved)
-# TODO: implement
+# Step 43 - submit_request
+def submit_request(server_state, prompt, max_new_tokens, priority, vocab):
+    # TODO: encode the prompt, build a request record, push it on the waiting heap, return new id.
+    
+    n = server_state['next_request_id']
+    request_id = f"req-{n}"
+    server_state['next_request_id'] += 1
+
+    token_ids = encode_prompt(prompt, vocab, add_bos=True)
+    sampling_params = server_state.get('sampling_params', {})
+
+    request = make_request(request_id, token_ids, max_new_tokens, sampling_params)
+
+    priority_queue_push(server_state['waiting_heap'], priority, request)
+
+    return request_id
 
 # Step 44 - drive_until_complete (not yet solved)
 # TODO: implement
