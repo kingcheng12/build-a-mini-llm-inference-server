@@ -922,7 +922,7 @@ def drive_until_complete(server_state, params, allocator, sampling_config, vocab
                     "finished": is_done
                 })
 
-                # 🔥 store per-request output
+                # store per-request output
                 server_state["completed"][rid]["output_ids"].append(tok)
                 server_state["completed"][rid]["chunks"].append(chunk)
 
@@ -1085,6 +1085,21 @@ def latency_percentiles(latencies, percentiles):
 
     return result
 
-# Step 51 - run_throughput_latency_benchmark (not yet solved)
-# TODO: implement
+# Step 51 - run_throughput_latency_benchmark
+def run_throughput_latency_benchmark(params, allocator, vocab, prompts, sampling_config, max_new_tokens, max_steps):
+    # TODO: submit prompts, drive the server, and reduce events into TTFT/ITL/throughput/percentile metrics.
+    
+    # submit prompt
+    server_state = {
+        'streams': [],
+        'completed': {},
+        'waiting_heap': [],
+        'running': [],
+        'max_running': max_steps
+    }
+
+    # step server
+
+    # event to metric
+    pass
 
