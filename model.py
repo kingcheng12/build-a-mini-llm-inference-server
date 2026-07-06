@@ -1037,8 +1037,24 @@ def inter_token_latency(events):
 
     return out
 
-# Step 49 - aggregate_throughput (not yet solved)
-# TODO: implement
+# Step 49 - aggregate_throughput
+def aggregate_throughput(events, total_time):
+    # TODO: count tokens and finished requests in events and divide by total_time.
+    
+    total_tokens = 0
+    total_requests = 0
+
+    for e in events:
+        if e['type'] == 'token' or e['type'] == 'first_token':
+            total_tokens += 1
+        if e['type'] == 'finish':
+            total_requests += 1
+        
+    return {'tokens_per_second': total_tokens/total_time,
+            'requests_per_second': total_requests/total_time,
+            'total_tokens': total_tokens,
+            'total_requests': total_requests,
+            }
 
 # Step 50 - latency_percentiles (not yet solved)
 # TODO: implement
