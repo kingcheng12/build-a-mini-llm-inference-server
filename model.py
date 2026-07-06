@@ -1086,6 +1086,7 @@ def latency_percentiles(latencies, percentiles):
     return result
 
 # Step 51 - run_throughput_latency_benchmark
+import time
 def run_throughput_latency_benchmark(params, allocator, vocab, prompts, sampling_config, max_new_tokens, max_steps):
     # TODO: submit prompts, drive the server, and reduce events into TTFT/ITL/throughput/percentile metrics.
     
@@ -1097,9 +1098,57 @@ def run_throughput_latency_benchmark(params, allocator, vocab, prompts, sampling
         'running': [],
         'max_running': max_steps
     }
+    events = []
 
     # step server
+    t0 = time.perf_counter()
+
+    for prompt in prompts:
+        request_id = submit_request(server_state, prompt, max_new_tokens, 0, vocab)
+        events.append({'request_id': request_id, 
+                        'event': 'submit',
+                        'type': 'submit',
+                        'time': time.perf_counter() - t0
+                        })
+        
+    step = 0
+    seen_req = set()
+    while step < max_steps:
+        streams = drive_until_complete(server_state, params, allocator, sampling_config, vocab, max_steps=1)
+        for chunk in streams:
+            request_id = chunk['request_id']
+            if request_id not in seen_req:
+                seen_req.add(request_id)
+                events.append({'request_id': request_id, 
+                        'event': 'first_token',
+                        'type': 'token',
+                        'time': time.perf_counter() - t0
+                        })
+            elif chunk['finished']:
+                events.append({'request_id': request_id, 
+                        'event': 'finish',
+                        'type': 'finish',
+                        'time': time.perf_counter() - t0
+                        })
+            else:
+                events.append({'request_id': request_id, 
+                        'event': 'token',
+                        'type': 'token',
+                        'time': time.perf_counter() - t0
+                        })
+
+        step += 1
 
     # event to metric
-    pass
+    metrics = {}
+    metrics['total_time'] = time.perf_counter() - t0
+    metrics['ttft'] = time_to_first_token(events)
+    metrics['itl'] = inter_token_latency(events)
+    metrics['throughput'] = aggregate_throughput(events, metrics['total_time'])
+
+    percentiles = sampling_config.get('percentiles', [50, 90, 99])
+    latencies = metrics['ttft'].values()
+    metrics['percentiles'] = latency_percentiles(latencies, percentiles)
+
+    return metrics
 
