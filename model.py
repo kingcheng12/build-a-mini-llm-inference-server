@@ -859,7 +859,7 @@ def drive_until_complete(server_state, params, allocator, sampling_config, vocab
     server_state.setdefault("running", [])
     server_state.setdefault("waiting_heap", [])
 
-    eos_token_id = sampling_config.get('eos_token_id', [0, 1, 2])
+    eos_token_id = sampling_config.get('eos_token_id', 0)
 
     while step < max_steps and (server_state["waiting_heap"] or server_state["running"]):
 
