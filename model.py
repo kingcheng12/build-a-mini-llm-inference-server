@@ -979,11 +979,63 @@ def build_completion_response(server_state, request_id, vocab):
         'finish_reason': finish_reason
     }
 
-# Step 47 - time_to_first_token (not yet solved)
-# TODO: implement
+# Step 47 - time_to_first_token
+def time_to_first_token(events):
+    # TODO: compute per-request TTFT from a list of timestamped serving events.
+    
+    submit_time = {}
+    first_token_time = {}
 
-# Step 48 - inter_token_latency (not yet solved)
-# TODO: implement
+    for e in events:
+        rid = e["request_id"]
+        t = e["time"]
+
+        if e["event"] == "submit":
+            if rid not in submit_time:
+                submit_time[rid] = t
+
+        elif e["event"] == "token":
+            if rid not in first_token_time:
+                first_token_time[rid] = t
+            else:
+                first_token_time[rid] = min(first_token_time[rid], t)
+
+    ttft = {}
+
+    for rid in first_token_time:
+        if rid in submit_time:
+            ttft[rid] = first_token_time[rid] - submit_time[rid]
+
+    return ttft
+
+# Step 48 - inter_token_latency
+def inter_token_latency(events):
+    # TODO: compute mean inter-token latency per request from token-event timestamps.
+    
+    token_time = {} # req_id: [token_time]
+    
+    for e in events:
+        if e['event'] != 'token':
+            continue
+
+        rid = e["request_id"]
+        t = e["time"]
+
+        if rid not in token_time:
+            token_time[rid] = [t]
+        else:
+            token_time[rid].append(t)
+    
+    out = {}
+    for rid in token_time.keys():
+        total = len(token_time[rid])
+        if total < 2:
+            out[rid] = 0.0
+        else:
+            average = (max(token_time[rid]) - min(token_time[rid]))/(total-1)
+            out[rid] = average
+
+    return out
 
 # Step 49 - aggregate_throughput (not yet solved)
 # TODO: implement
