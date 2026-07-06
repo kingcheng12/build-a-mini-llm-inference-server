@@ -1056,8 +1056,34 @@ def aggregate_throughput(events, total_time):
             'total_requests': total_requests,
             }
 
-# Step 50 - latency_percentiles (not yet solved)
-# TODO: implement
+# Step 50 - latency_percentiles
+def latency_percentiles(latencies, percentiles):
+    # TODO: return a dict mapping each percentile in `percentiles` to the corresponding latency value.
+    if not percentiles:
+        return {}
+    if not latencies:
+        return {float(p): 0.0 for p in percentiles}
+
+    latencies = sorted(latencies)
+    n = len(latencies)
+
+    result = {}
+
+    for p in percentiles:
+
+        p = min(max(p, 0.0), 100.0)
+
+        idx = p / 100 * (n - 1)
+        lo = int(idx)
+        hi = min(lo + 1, n - 1)
+
+        if lo == hi:
+            result[float(p)] = latencies[lo]
+        else:
+            w = idx - lo
+            result[float(p)] = latencies[lo] * (1 - w) + latencies[hi] * w
+
+    return result
 
 # Step 51 - run_throughput_latency_benchmark (not yet solved)
 # TODO: implement
